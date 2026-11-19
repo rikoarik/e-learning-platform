@@ -1,9 +1,8 @@
-import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/services.dart';
 import 'package:flutter/material.dart'
-    show NavigationBar, TextField, ListView, Scrollable, SizedBox, Widget;
+    show ListView, NavigationBar, Scrollable, Size, SizedBox, TextField, Widget;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,83 +13,25 @@ import 'package:lembar/courses/state/course_providers.dart';
 import 'package:lembar/courses/ui/course_detail_screen.dart';
 import 'package:lembar/main.dart';
 
+import '../support/fixture_bundle.dart';
+
 void main() {
   final fixture = File('assets/data/courses.json').readAsStringSync();
-  final repository = AssetCourseRepository(bundle: _FixtureBundle(fixture));
+  final repository = AssetCourseRepository(bundle: FixtureBundle(fixture));
 
-  Widget app([String path = '/courses']) => ProviderScope(
+  Widget app({
+    String path = '/courses',
+    CourseRepository? overrideRepository,
+  }) => ProviderScope(
     retry: (_, _) => null,
     overrides: [
-      courseRepositoryProvider.overrideWithValue(repository),
+      courseRepositoryProvider.overrideWithValue(
+        overrideRepository ?? repository,
+      ),
       sessionProvider.overrideWith(_SignedInSession.new),
     ],
     child: LembarApp(initialLocation: path),
   );
-
-  test('maps every catalog lesson to its own public YouTube ID', () async {
-    final catalog = await repository.listCourses();
-    expect(catalog.map((course) => course.lessonCount), [5, 2, 2]);
-    expect(catalog.map((course) => course.duration.inSeconds), [
-      3077,
-      1417,
-      3265,
-    ]);
-    final courses = await Future.wait(
-      catalog.map((course) => repository.getCourse(course.id)),
-    );
-    final videos = <String>{};
-    for (final course in courses) {
-      expect(
-        course.lessons.map((lesson) => lesson.order),
-        List.generate(course.lessons.length, (index) => index + 1),
-      );
-      for (final lesson in course.lessons) {
-        expect(lesson.courseId, course.summary.id);
-        expect(lesson.youtubeChannel, isNotEmpty);
-        expect(lesson.youtubeVideoId, matches(RegExp(r'^[A-Za-z0-9_-]{11}$')));
-        expect(videos.add(lesson.youtubeVideoId!), isTrue);
-        expect(lesson.videoUri, isNull);
-        expect(lesson.videoAsset, isNull);
-      }
-    }
-    expect(courses.first.lessons.first.youtubeVideoId, 'OgNq2UYpf2o');
-    expect(videos, hasLength(9));
-  });
-
-  test('rejects a lesson combining an embed with an MP4', () async {
-    final conflicting = AssetCourseRepository(
-      bundle: _FixtureBundle(
-        fixture.replaceFirst(
-          '"youtubeVideoId": "OgNq2UYpf2o"',
-          '"youtubeVideoId": "OgNq2UYpf2o", "videoUrl": "https://example.com/lesson.mp4"',
-        ),
-      ),
-    );
-    await expectLater(
-      conflicting.listCourses(),
-      throwsA(
-        isA<CourseException>().having(
-          (error) => error.failure,
-          'failure',
-          CourseFailure.invalidData,
-        ),
-      ),
-    );
-  });
-
-  test('turns malformed fixtures into a typed failure', () async {
-    final invalid = AssetCourseRepository(bundle: _FixtureBundle('[]'));
-    await expectLater(
-      invalid.listCourses(),
-      throwsA(
-        isA<CourseException>().having(
-          (error) => error.failure,
-          'failure',
-          CourseFailure.invalidData,
-        ),
-      ),
-    );
-  });
 
   testWidgets('opens course from catalog and returns through the same route', (
     tester,
@@ -113,12 +54,53 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      app('/courses/dasar-desain-ui/lessons/lesson-tidak-ada'),
+      app(path: '/courses/dasar-desain-ui/lessons/lesson-tidak-ada'),
     );
     await tester.pumpAndSettle();
     expect(find.text('Lesson tidak tersedia.'), findsOneWidget);
     expect(find.text('Mulai lesson pertama'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('detail shows loading, then retries a failed request', (
+    tester,
+  ) async {
+    final repository = _DeferredDetailRepository();
+
+    await tester.pumpWidget(
+      app(path: '/courses/design', overrideRepository: repository),
+    );
+    expect(find.text('Memuat detail course…'), findsOneWidget);
+    expect(find.text('Mulai lesson pertama'), findsNothing);
+
+    repository.firstRequest.completeError(
+      const CourseException(CourseFailure.unavailable),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Course gagal dimuat'), findsOneWidget);
+
+    await tester.tap(find.text('Coba lagi'));
+    await tester.pumpAndSettle();
+
+    expect(repository.calls, 2);
+    expect(find.text('Belum ada lesson'), findsOneWidget);
+    expect(find.text('Course gagal dimuat'), findsNothing);
+    expect(find.text('Mulai lesson pertama'), findsNothing);
+  });
+
+  testWidgets('missing course deep link offers a return to the catalog', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app(path: '/courses/course-tidak-ada'));
+    await tester.pumpAndSettle();
+    expect(find.text('Course tidak tersedia'), findsOneWidget);
+    expect(find.text('Coba lagi'), findsNothing);
+
+    await tester.tap(find.text('Ke katalog'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Course tidak tersedia'), findsNothing);
+    expect(find.text('Dasar Desain UI'), findsOneWidget);
   });
 
   testWidgets('shows an offline message and retries into empty catalog', (
@@ -208,7 +190,7 @@ void main() {
   );
 
   testWidgets('pull to refresh reads course detail again', (tester) async {
-    final bundle = _FixtureBundle(fixture);
+    final bundle = FixtureBundle(fixture);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -244,11 +226,11 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('Katalog'), findsNWidgets(2));
     await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pumpWidget(app('/courses/dasar-desain-ui'));
+    await tester.pumpWidget(app(path: '/courses/dasar-desain-ui'));
     await tester.pumpAndSettle();
     expect(find.byType(CourseDetailScreen), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pumpWidget(app('/account'));
+    await tester.pumpWidget(app(path: '/account'));
     await tester.pumpAndSettle();
     expect(find.text('Profil'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -283,14 +265,28 @@ class _RetryRepository implements CourseRepository {
       throw const CourseException(CourseFailure.notFound);
 }
 
-class _FixtureBundle extends CachingAssetBundle {
-  _FixtureBundle(this.json);
-  final String json;
-  int loads = 0;
+class _DeferredDetailRepository implements CourseRepository {
+  final firstRequest = Completer<Course>();
+  int calls = 0;
 
   @override
-  Future<ByteData> load(String key) async {
-    loads++;
-    return ByteData.sublistView(utf8.encode(json));
+  Future<Course> getCourse(String id) async {
+    if (calls++ == 0) return firstRequest.future;
+    return Course(
+      summary: CourseSummary(
+        id: id,
+        title: 'Dasar Desain',
+        summary: 'Belajar desain',
+        category: 'Desain',
+        coverKey: 'design',
+        lessonCount: 0,
+        duration: Duration.zero,
+      ),
+      description: 'Pengenalan desain untuk pemula',
+      lessons: [],
+    );
   }
+
+  @override
+  Future<List<CourseSummary>> listCourses() async => [];
 }

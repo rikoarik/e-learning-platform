@@ -51,8 +51,12 @@ erDiagram
 
 ```sh
 flutter analyze
-flutter test
+flutter test --coverage
 flutter test integration_test/student_flow_test.dart -d DEVICE_ID
 ```
 
-Tes integrasi memeriksa pemetaan lesson ke video, pergantian controller, serta penanganan video yang gagal dimuat dan percobaan ulang. Gunakan perangkat yang terhubung ke internet untuk menjalankannya.
+- **Unit test** memeriksa aturan data course dan lesson, sumber media, serta validasi login dan logout. [Tes repository](test/courses/data/course_repository_test.dart) · [Tes sesi demo](test/auth/demo_session_test.dart)
+- **Widget test** menjalankan alur Student dan memeriksa keadaan loading, gagal, kosong, dan retry pada UI. [Tes navigasi dan tampilan Student](test/app/student_navigation_test.dart)
+- **Tes integrasi** memeriksa pemetaan sembilan lesson ke video, pergantian controller, serta penanganan video gagal dan retry. Jalankan di perangkat yang terhubung ke internet. [Tes alur Student](integration_test/student_flow_test.dart)
+
+`flutter test` menjalankan unit dan widget test. Opsi `--coverage` juga menulis laporan cakupan baris ke `coverage/lcov.info`.
