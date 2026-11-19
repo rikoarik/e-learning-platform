@@ -1,0 +1,124 @@
+{
+  "data": [
+    {
+      "id": "dasar-desain-ui",
+      "title": "Dasar Desain UI",
+      "summary": "Pelajari editor dan layout di Figma.",
+      "description": "Mulai dari cara membuka Figma, lalu pelajari editor, frame, gaya teks, dan auto layout.",
+      "category": "Desain",
+      "coverKey": "design",
+      "lessons": [
+        {
+          "id": "pengantar-figma-design",
+          "courseId": "dasar-desain-ui",
+          "order": 1,
+          "title": "Pengantar Figma Design",
+          "description": "Kenali fungsi Figma dan cara mulai menggunakan akun gratis.",
+          "durationSeconds": 478,
+          "youtubeVideoId": "OgNq2UYpf2o",
+          "youtubeChannel": "Bayu Alpiansyah"
+        },
+        {
+          "id": "mengenal-antarmuka-figma",
+          "courseId": "dasar-desain-ui",
+          "order": 2,
+          "title": "Mengenal antarmuka Figma",
+          "description": "Kenali editor, alat dasar, dan cara mengelola layer saat mulai mendesain.",
+          "durationSeconds": 360,
+          "youtubeVideoId": "6R4KAr3yg1M",
+          "youtubeChannel": "Adam Mulyawan"
+        },
+        {
+          "id": "membuat-frame-pertama",
+          "courseId": "dasar-desain-ui",
+          "order": 3,
+          "title": "Frame dan group di Figma",
+          "description": "Pelajari perbedaan frame dan group lewat contoh serta kapan memakai masing-masing.",
+          "durationSeconds": 589,
+          "youtubeVideoId": "8iSib7jCDrc",
+          "youtubeChannel": "UX Orbit Design"
+        },
+        {
+          "id": "teks-dan-warna",
+          "courseId": "dasar-desain-ui",
+          "order": 4,
+          "title": "Gaya teks di Figma",
+          "description": "Buat dan kelola text style supaya tipografi konsisten dan mudah diperbarui.",
+          "durationSeconds": 922,
+          "youtubeVideoId": "Qnna6HlNVm8",
+          "youtubeChannel": "DevpathbySyarif"
+        },
+        {
+          "id": "merapikan-layout",
+          "courseId": "dasar-desain-ui",
+          "order": 5,
+          "title": "Dasar auto layout",
+          "description": "Pelajari konsep auto layout, padding, dan cara mengatur ukuran elemen.",
+          "durationSeconds": 728,
+          "youtubeVideoId": "pUze6wn8pr0",
+          "youtubeChannel": "Desadesain"
+        }
+      ]
+    },
+    {
+      "id": "fotografi-ponsel",
+      "title": "Fotografi Ponsel",
+      "summary": "Atur komposisi dan cahaya dengan kamera HP.",
+      "description": "Gunakan aturan sepertiga untuk membingkai subjek, lalu terapkan komposisi dan pencahayaan saat memotret dengan HP.",
+      "category": "Fotografi",
+      "coverKey": "photo",
+      "lessons": [
+        {
+          "id": "menyusun-komposisi",
+          "courseId": "fotografi-ponsel",
+          "order": 1,
+          "title": "Komposisi aturan sepertiga",
+          "description": "Terapkan aturan sepertiga pada foto subjek dan pemandangan, lalu aktifkan grid di kamera HP.",
+          "durationSeconds": 867,
+          "youtubeVideoId": "97333u8Url0",
+          "youtubeChannel": "Stephen Ang"
+        },
+        {
+          "id": "membaca-cahaya-alami",
+          "courseId": "fotografi-ponsel",
+          "order": 2,
+          "title": "Foto perjalanan dengan HP",
+          "description": "Atur sudut pengambilan, komposisi, dan pencahayaan saat mengambil foto dan video perjalanan.",
+          "durationSeconds": 550,
+          "youtubeVideoId": "EfUSdAje3hg",
+          "youtubeChannel": "Jagat Review"
+        }
+      ]
+    },
+    {
+      "id": "menulis-untuk-web",
+      "title": "Menulis untuk Web",
+      "summary": "Tulis artikel web dan atur metadata SEO.",
+      "description": "Pelajari cara menulis artikel ramah SEO, lalu praktikkan pengaturan judul dan deskripsi di Blogger.",
+      "category": "Menulis",
+      "coverKey": "writing",
+      "lessons": [
+        {
+          "id": "meringkas-paragraf",
+          "courseId": "menulis-untuk-web",
+          "order": 1,
+          "title": "Menulis artikel ramah SEO",
+          "description": "Ikuti kelas Niagahoster tentang cara menulis artikel website dan blog yang ramah SEO beserta contohnya.",
+          "durationSeconds": 2685,
+          "youtubeVideoId": "Cw-LCwcZa8g",
+          "youtubeChannel": "Hostinger ID"
+        },
+        {
+          "id": "menulis-judul-yang-jelas",
+          "courseId": "menulis-untuk-web",
+          "order": 2,
+          "title": "Judul dan deskripsi di Blogger",
+          "description": "Atur meta title serta meta description di Blogger dan pahami fungsi metadata untuk pencarian.",
+          "durationSeconds": 580,
+          "youtubeVideoId": "QKhEDdpiIOM",
+          "youtubeChannel": "PROJEKSEO CHANNEL"
+        }
+      ]
+    }
+  ]
+}
