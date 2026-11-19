@@ -108,7 +108,8 @@ jobs:
             unset ANDROID_KEYSTORE_BASE64
             umask 022
           fi
-          flutter build apk --release --no-pub
+          # The release build regenerates the Android plugin list without test plugins.
+          flutter build apk --release
 
       - name: Verify APK and generate checksum
         working-directory: build/app/outputs/named-apk/release
