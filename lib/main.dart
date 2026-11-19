@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -40,7 +40,10 @@ class _LembarAppState extends ConsumerState<LembarApp> {
     debugShowCheckedModeBanner: false,
     onGenerateTitle: (context) => AppLocalizations.of(context).appName,
     routerConfig: _router,
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    localizationsDelegates: const [
+      AppLocalizations.delegate,
+      ...GlobalMaterialLocalizations.delegates,
+    ],
     supportedLocales: AppLocalizations.supportedLocales,
     theme: lembarTheme(),
     builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(

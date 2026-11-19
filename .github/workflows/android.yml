@@ -1,0 +1,117 @@
+name: Android APK
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+
+jobs:
+  build:
+    name: Check and build APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      FLUTTER_VERSION: "3.50.0"
+      FLUTTER_COMMIT: "ab2912035e160d9cad6306df307576da6128ebdb"
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify release tag matches pubspec
+        if: github.ref_type == 'tag'
+        run: |
+          version=$(sed -nE 's/^version: ([0-9]+\.[0-9]+\.[0-9]+)\+[0-9]+$/\1/p' pubspec.yaml)
+          if [[ -z "$version" || "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::The release tag must match the version in pubspec.yaml."
+            exit 1
+          fi
+
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Flutter
+        run: |
+          git clone --depth 1 --branch "$FLUTTER_VERSION" --single-branch \
+            https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          test "$(git -C "$RUNNER_TEMP/flutter" rev-parse HEAD)" = "$FLUTTER_COMMIT"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Analyze and test
+        run: |
+          flutter pub get --enforce-lockfile
+          flutter analyze --no-pub
+          flutter test --no-pub
+
+      - name: Prepare Android SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;28.2.13676358"
+
+      - name: Build APK
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ github.ref_type == 'tag' && secrets.ANDROID_KEYSTORE_BASE64 || '' }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ github.ref_type == 'tag' && secrets.ANDROID_KEYSTORE_PASSWORD || '' }}
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            : "${ANDROID_KEYSTORE_BASE64:?Missing Android release keystore secret}"
+            : "${ANDROID_KEYSTORE_PASSWORD:?Missing Android release password secret}"
+            umask 077
+            export ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/lembar-release.p12"
+            trap 'rm -f "$ANDROID_KEYSTORE_PATH"' EXIT
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
+            unset ANDROID_KEYSTORE_BASE64
+            umask 022
+          fi
+          flutter build apk --release --no-pub
+
+      - name: Verify APK and generate checksum
+        working-directory: build/app/outputs/named-apk/release
+        run: |
+          shopt -s failglob
+          apk_files=(*.apk)
+          test "${#apk_files[@]}" -eq 1
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify "${apk_files[0]}"
+          sha256sum "${apk_files[0]}" > "${apk_files[0]}.sha256"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: lembar-android
+          path: build/app/outputs/named-apk/release/
+          if-no-files-found: error
+          compression-level: 0
+
+  publish:
+    name: Publish GitHub Release
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: lembar-android
+          path: release
+
+      - name: Publish APK and checksum
+        working-directory: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha256sum --check -- *.sha256
+          gh release create "$GITHUB_REF_NAME" ./*.apk ./*.apk.sha256 \
+            --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes \
+            --title "Lembar $GITHUB_REF_NAME"

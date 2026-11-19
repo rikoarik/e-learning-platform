@@ -2,13 +2,15 @@
 
 **Lembar** adalah aplikasi Flutter untuk Student pada Technical Assessment Track B. Student dapat menjelajahi tiga course, melihat daftar lesson berurutan, dan menonton sembilan video berbahasa Indonesia.
 
+**[Unduh APK Android dari GitHub Releases](https://github.com/rikoarik/E-LEARNING-PLATFORM/releases/latest)**
+
 ![Tangkapan layar Lembar di Android. Masuk, Katalog, Detail course, dan Video lesson.](docs/images/lembar-android.webp)
 
 [Desain Figma](https://www.figma.com/design/5gs2WKfTLrd0i4a5kdvDUV/Lembar-Simple-E-Learning?node-id=8-662) · [Prototipe Student](https://www.figma.com/proto/5gs2WKfTLrd0i4a5kdvDUV/Lembar-Simple-E-Learning?node-id=8-703&starting-point-node-id=8-703)
 
 ## Menjalankan aplikasi
 
-Gunakan Flutter 3.47.5 dan Dart 3.13.4 sebagai versi acuan. Siapkan Android SDK dan perangkat Android 7.0 (API 24) atau lebih baru, atau Xcode dan perangkat maupun simulator iOS 15 atau lebih baru.
+Gunakan Flutter 3.50.0 stable dengan Dart 3.14.0 bawaan SDK. Siapkan Android SDK dan perangkat Android 7.0 (API 24) atau lebih baru, atau Xcode dan perangkat maupun simulator iOS 15 atau lebih baru.
 
 ```sh
 git clone https://github.com/rikoarik/E-LEARNING-PLATFORM.git
@@ -20,7 +22,9 @@ flutter run -d DEVICE_ID
 
 Pilih **Masuk dengan akun demo**. Jika ingin mencoba form, gunakan email `student@lembar.example` dan kata sandi `lembar-demo`. Demo memakai [katalog JSON lokal](assets/data/courses.json) dan bisa dijalankan tanpa server, API key, atau konfigurasi tambahan.
 
-Untuk membuat APK demo Android ARM64, jalankan `flutter build apk --debug --target-platform android-arm64`. Hasil build tersedia di `build/app/outputs/flutter-apk/app-debug.apk`.
+Untuk membuat APK lokal, jalankan `flutter build apk --debug`. Gradle menyalin APK dengan nama aplikasi dan versi ke `build/app/outputs/named-apk/debug/`. Untuk build release, gunakan `flutter build apk --release` dan lihat folder `build/app/outputs/named-apk/release/`.
+
+Jika versi debug sudah terpasang, Android mengharuskan versi itu dihapus sebelum memasang APK dari GitHub karena sertifikatnya berbeda.
 
 ### Alur demo
 
@@ -60,3 +64,9 @@ flutter test integration_test/student_flow_test.dart -d DEVICE_ID
 - **Tes integrasi** memeriksa pemetaan sembilan lesson ke video, pergantian controller, serta penanganan video gagal dan retry. Jalankan di perangkat yang terhubung ke internet. [Tes alur Student](integration_test/student_flow_test.dart)
 
 `flutter test` menjalankan unit dan widget test. Opsi `--coverage` juga menulis laporan cakupan baris ke `coverage/lcov.info`.
+
+## Rilis Android
+
+[GitHub Actions](.github/workflows/android.yml) menjalankan analisis, unit test, widget test, dan build APK pada pull request serta push ke `main`. Tag `vX.Y.Z` yang cocok dengan versi di `pubspec.yaml` memicu rilis publik berisi APK universal bertanda tangan dan checksum SHA-256.
+
+Untuk rilis berikutnya, naikkan versi dan build number di `pubspec.yaml`, push commit ke `main`, lalu push tag versi yang cocok. Workflow memakai `ANDROID_KEYSTORE_BASE64` dan `ANDROID_KEYSTORE_PASSWORD` dari GitHub Secrets. Gunakan keystore rilis yang sama agar pengguna bisa memasang update.
